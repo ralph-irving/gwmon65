@@ -122,6 +122,41 @@ LODCM4:	JSR	CIN		;Done getting data, eat chars
 LODCM5:	RTS			;Got LF, return to command loop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Exit -- Return to DOS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+QUITCMD:
+;	Call ProDOS DEALLOC_INTERUPT mli
+;	disable interrupts
+
+	jsr	IOCLR		;Disable 6850 interrupts
+
+	lda	AIPARMS+1	;Get INT_NUM
+	sta	DIPARMS+1	; for deallocation
+	jsr	MLI		;Call ProDOS MLI to
+	.byte	$41		; deallocate irq routine
+	.word	DIPARMS
+        BEQ     @EXIT
+        JMP     PDOSERR         ;Bail if error
+@EXIT:
+	jmp	$03d0
+	brk
+	jsr	MLI		;Quit Call
+	.byte	$65
+	.word	QPARMS		;Quit parameter list
+
+;Recover registers
+;	ply			;Y
+;	plx			;X
+;	pla			;A
+;	rts
+
+PDOSERR:
+;	JSR	PRTHEX		;Print A (hex error #)
+;	JSR	CRLF		;Carriage Return
+;	JMP	$03D0		;end
+	BRK
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CMDTAB -- Table/array of commands
 ;
 ;Table entry structure:
@@ -139,3 +174,5 @@ CMDTAB:	.byte	'd'
 	.word	GOCMD
 	.byte	'l'
 	.word	LODCMD
+	.byte	'q'
+	.word	QUITCMD

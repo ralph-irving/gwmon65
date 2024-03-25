@@ -1,0 +1,41 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; APPLE2 -- GWMON-65 Small Monitor for the Apple II
+;
+; This customization uses a CCS serial port in slot 2.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Hardware Equates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CTLREG		= $C0A0		;6850 ACIA control register
+DATREG		= $C0A1		;6850 ACIA data register
+CCCOM		= $C0A0		;6850 ACIA command register
+CCSTS		= $C0A0		;6850 ACIA status register
+CCDTA		= $C0A1		;6850 ACIA data register
+
+INPUT_BUFFER	= $0200
+MLI		= $BF00		;Entry point to ProDOS MLI
+
+	.setcpu    "65c02"
+	.org	$9000
+
+.segment "CODE"
+
+	.include "jmptab.inc"	;Standard GWMON-65 jump table
+
+	.include "sm.inc"	;The small monitor
+	.include "scmdstd.inc"	;SM standard commands
+	.include "scmdnull.inc"	;Command table terminator
+
+	.include "6850acia.inc"	;Motorola 6850 ACIA driver
+
+;	.include "512check.inc"	;512-byte limit checker
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Vectors
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+VECTOR:	.word	SETUP
+	.word	SETUP
+	.word	SETUP

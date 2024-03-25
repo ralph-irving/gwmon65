@@ -10,31 +10,47 @@
 ;
 ;Set the ZPBASE symbol in the customization file to move
 ;these variables. Defaults to $F0
+;
+; Free zero page address available on the Apple 2
+; $06 - $09, $1E, $EB - $EF, $FA - $FD
+;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .IFNDEF	ZPBASE
-ZPBASE		= $F0
+ZPBASE		= $00
 .ENDIF
 
-ADRLO		= ZPBASE+$2	;Low address byte from GETADR
-ADRHI		= ZPBASE+$3	;High address byte from GETADR
-NIBHI		= ZPBASE+$4	;Low nybble for ASCII to hex conversion
-ENDLO		= ZPBASE+$5	;Low address byte for two-address commands
-ENDHI		= ZPBASE+$6	;High address byte for two-address commands
-CKSUM		= ZPBASE+$7	;Checksum storage for Intel HEX loader
-CSFLAG		= ZPBASE+$8	;Flag to indicate checksum failure
-TEMP		= ZPBASE+$F	;Temporary storage
+ADRLO		= ZPBASE+$06	;Low address byte from GETADR
+ADRHI		= ZPBASE+$07	;High address byte from GETADR
+ENDLO		= ZPBASE+$08	;Low address byte for two-address commands
+ENDHI		= ZPBASE+$09	;High address byte for two-address commands
+TEMP		= ZPBASE+$1E	;Temporary storage
+NIBHI		= ZPBASE+$EB	;Low nybble for ASCII to hex conversion
+CKSUM		= ZPBASE+$EC 	;Checksum storage for Intel HEX loader
+CSFLAG		= ZPBASE+$ED	;Flag to indicate checksum failure
+READ_PTR	= ZPBASE+$EE	;Input buffer read pointer
+WRITE_PTR	= ZPBASE+$EF	;Input buffer write pointer
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;SETUP -- Prepare hardware, print monitor sign-on message
 ;
 ;Falls through to WSTART.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-SETUP:	SEI			;Disable interrupts
+SETUP:
+;	pha                     ;Save registers A
+;	phx			; X
+;	phy			; Y
+
+	SEI			;Disable interrupts
 	CLD			;Clear decimal arithmetic mode.
+
 	LDX	#$FF		;Set up stack pointer
 	TXS
 
+	sta     $cfff           ;Turn off co-resident ROMs
+        sta     $c200           ;Select co-resident ROM in slot 2
+
 	JSR	IOSET		;Do I/O module setup
+	CLI			;Enable interrupts
 	LDY	#SIGNON		;Y = offset to SIGNON string
 	JSR	PRTCLS		;Print signon message
 
@@ -43,11 +59,26 @@ SETUP:	SEI			;Disable interrupts
 ;
 ;Falls through to the command processor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-WSTART:	LDX	#$FF		;Reload stack pointer since
-	TXS			;we may have CANCELed
-
+WSTART:
+	LDX	#$FF		;Reload stack pointer since
+	TXS			;we may have CANCELed 
 	.include "scp.inc"
 	.include "common.inc"
+
+;Interrupt Data
+AIPARMS:
+	.byte	$02
+	.byte	$01
+	.word	IRQ_HANDLER
+DIPARMS:
+	.byte	$01
+	.byte	$00
+QPARMS:
+	.byte	$04
+	.byte	$00
+	.word	$0000
+	.byte	$00
+	.word	$0000
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Message Strings
@@ -58,10 +89,11 @@ WSTART:	LDX	#$FF		;Reload stack pointer since
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 STRNGS		= *
 SIGNON		= ^(* - STRNGS - 1)
-	.byte	"GWMON-65 0.1 S" ,'M' + $80
+	.byte   "GWMON-65 0.2 D" ,'P' + $80
 
 PROMPT		= * - STRNGS - 1
-	.byte	LF, '>' + $80
+	.byte	LF, '<' + $80
 
 ERRSTR		= * - STRNGS - 1
-	.byte	"ERRO", 'R' + $80
+	.byte   "ERRO", 'R' + $80
+

@@ -7,7 +7,13 @@ CC		= cc65
 CA		= ca65
 CL		= cl65
 
-all: oms6507sbc osi1 r65x1qsbc
+all: apple2 # oms6507sbc osi1 r65x1qsbc
+
+apple2: apple2.o
+	$(CL) -t apple2 -C apple2enh-asm.cfg -o serialmon apple2.o
+
+apple2.o: apple2.a65
+	$(CA) -t apple2 -l serialmon.lst -o apple2.o apple2.a65
 
 oms6507sbc: smoms6507.hex
 
