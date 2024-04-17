@@ -95,8 +95,12 @@ HEXDM3:	INC	ADRLO		;Increment the current dump location
 HEXDM4:	DEX			;Decrement line loop counter
 	BNE	HEXDM2		;Not zero, print more on this line
 
+	JSR	BUFFER_SIZE	;Key pressed? exit.
+	BNE	HEXDON
+
 	LDA	TEMP		;Get completion flag
 	BEQ	HEXDM1		;Haven't hit ENDLO, ENDHI yet, do more
+HEXDON:
 	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
